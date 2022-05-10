@@ -39,10 +39,15 @@ const LoginPage = () => {
   const [providers, setProviders] = useState<any>({});
 
   useEffect(() => {
-    getProviders().then((prov) => {
-      // console.log({prov});
-      setProviders(prov);
-    });
+    getProviders()
+      .then((prov) => {
+        console.log({ prov });
+        console.log("aqui");
+        setProviders(prov);
+      })
+      .catch((e) => {
+        console.log("aqui2");
+      });
   }, []);
 
   const onLoginUser = async ({ email, password }: FormData) => {
@@ -172,23 +177,30 @@ export const getServerSideProps: GetServerSideProps = async ({
   req,
   query,
 }) => {
-  const session = await getSession({ req });
-  // console.log({session});
+  try {
+    const session = await getSession({ req });
+    // console.log({session});
+    console.log("aqui4");
+    const { p = "/" } = query;
 
-  const { p = "/" } = query;
+    if (session) {
+      return {
+        redirect: {
+          destination: p.toString(),
+          permanent: false,
+        },
+      };
+    }
 
-  if (session) {
     return {
-      redirect: {
-        destination: p.toString(),
-        permanent: false,
-      },
+      props: {},
+    };
+  } catch (error) {
+    console.log("aqui4");
+    return {
+      props: {},
     };
   }
-
-  return {
-    props: {},
-  };
 };
 
 export default LoginPage;
