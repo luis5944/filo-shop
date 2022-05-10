@@ -1,3 +1,8 @@
+import { useState, useEffect } from "react";
+import { GetServerSideProps } from "next";
+import NextLink from "next/link";
+import { signIn, getSession, getProviders } from "next-auth/react";
+
 import {
   Box,
   Button,
@@ -8,15 +13,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { AuthLayout } from "../../components/layouts";
-import NextLink from "next/link";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { validation } from "../../utils";
 import { ErrorOutline } from "@mui/icons-material";
+import { useForm } from "react-hook-form";
+
+import { AuthLayout } from "../../components/layouts";
+import { validation } from "../../utils";
 import { useRouter } from "next/router";
-import { getProviders, getSession, signIn } from "next-auth/react";
-import GitHubIcon from "@mui/icons-material/GitHub";
 
 type FormData = {
   email: string;
@@ -25,47 +27,54 @@ type FormData = {
 
 const LoginPage = () => {
   const router = useRouter();
-  const [showError, setShowError] = useState(false);
-  const [providers, setProviders] = useState<any>({});
-
-  useEffect(() => {
-    getProviders()
-      .then((prov) => setProviders(prov))
-      .catch((err) => {
-        console.log("error aqui");
-      });
-  }, []);
+  // const { loginUser } = useContext( AuthContext );
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
+  const [showError, setShowError] = useState(false);
 
-  const onLoginUser: SubmitHandler<FormData> = async ({ email, password }) => {
+  const [providers, setProviders] = useState<any>({});
+
+  useEffect(() => {
+    getProviders().then((prov) => {
+      // console.log({prov});
+      setProviders(prov);
+    });
+  }, []);
+
+  const onLoginUser = async ({ email, password }: FormData) => {
     setShowError(false);
 
+    // const isValidLogin = await loginUser( email, password );
+    // if ( !isValidLogin ) {
+    //     setShowError(true);
+    //     setTimeout(() => setShowError(false), 3000);
+    //     return;
+    // }
+    // // Todo: navegar a la pantalla que el usuario estaba
+    // const destination = router.query.p?.toString() || '/';
+    // router.replace(destination);
     await signIn("credentials", { email, password });
   };
 
   return (
-    <AuthLayout title={"Ingresar a la página"}>
-      <form onSubmit={handleSubmit(onLoginUser)}>
-        <Box sx={{ width: "350px", padding: "10px 20px" }}>
+    <AuthLayout title={"Ingresar"}>
+      <form onSubmit={handleSubmit(onLoginUser)} noValidate>
+        <Box sx={{ width: 350, padding: "10px 20px" }}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <Typography variant="h1" component="h1">
                 Iniciar Sesión
               </Typography>
-
               <Chip
-                sx={{
-                  display: showError ? "flex" : "none",
-                }}
-                label="No existe ese usuario/contraseña"
+                label="No reconocemos ese usuario / contraseña"
                 color="error"
                 icon={<ErrorOutline />}
                 className="fadeIn"
+                sx={{ display: showError ? "flex" : "none" }}
               />
             </Grid>
 
@@ -77,7 +86,7 @@ const LoginPage = () => {
                 fullWidth
                 {...register("email", {
                   required: "Este campo es requerido",
-                  validate: (email) => validation.isEmail(email),
+                  validate: validation.isEmail,
                 })}
                 error={!!errors.email}
                 helperText={errors.email?.message}
@@ -85,32 +94,32 @@ const LoginPage = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
+                label="Contraseña"
+                type="password"
+                variant="filled"
+                fullWidth
                 {...register("password", {
                   required: "Este campo es requerido",
                   minLength: { value: 6, message: "Mínimo 6 caracteres" },
                 })}
                 error={!!errors.password}
                 helperText={errors.password?.message}
-                label="Contraseña"
-                type="password"
-                variant="filled"
-                fullWidth
               />
             </Grid>
 
             <Grid item xs={12}>
               <Button
+                type="submit"
                 color="secondary"
                 className="circular-btn"
                 size="large"
                 fullWidth
-                type="submit"
               >
                 Ingresar
               </Button>
             </Grid>
 
-            <Grid item xs={12} display="flex" justifyContent="center">
+            <Grid item xs={12} display="flex" justifyContent="end">
               <NextLink
                 href={
                   router.query.p
@@ -119,7 +128,7 @@ const LoginPage = () => {
                 }
                 passHref
               >
-                <Link underline="always">¿No tienes cuenta? Registrate</Link>
+                <Link underline="always">¿No tienes cuenta?</Link>
               </NextLink>
             </Grid>
 
@@ -127,28 +136,25 @@ const LoginPage = () => {
               item
               xs={12}
               display="flex"
-              flexDirection={"column"}
-              justifyContent={"center"}
+              flexDirection="column"
+              justifyContent="end"
             >
               <Divider sx={{ width: "100%", mb: 2 }} />
-
               {Object.values(providers).map((provider: any) => {
+                if (provider.id === "credentials")
+                  return <div key="credentials"></div>;
+
                 return (
-                  provider.id !== "credentials" && (
-                    <Button
-                      key={provider.id}
-                      variant="outlined"
-                      fullWidth
-                      color="primary"
-                      sx={{
-                        mb: 1,
-                      }}
-                      startIcon={<GitHubIcon />}
-                      onClick={() => signIn(provider.id)}
-                    >
-                      {provider.name}
-                    </Button>
-                  )
+                  <Button
+                    key={provider.id}
+                    variant="outlined"
+                    fullWidth
+                    color="primary"
+                    sx={{ mb: 1 }}
+                    onClick={() => signIn(provider.id)}
+                  >
+                    {provider.name}
+                  </Button>
                 );
               })}
             </Grid>
@@ -161,15 +167,16 @@ const LoginPage = () => {
 
 // You should use getServerSideProps when:
 // - Only if you need to pre-render a page whose data must be fetched at request time
-import { GetServerSideProps } from "next";
 
 export const getServerSideProps: GetServerSideProps = async ({
   req,
   query,
 }) => {
   const session = await getSession({ req });
-  console.log(session);
+  // console.log({session});
+
   const { p = "/" } = query;
+
   if (session) {
     return {
       redirect: {
@@ -183,4 +190,5 @@ export const getServerSideProps: GetServerSideProps = async ({
     props: {},
   };
 };
+
 export default LoginPage;

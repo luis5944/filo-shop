@@ -24,14 +24,13 @@ export const checkUserEmailPassword = async (
   };
 };
 
-export const oAuthToDbUser = async (oAuthEmail: string, oAuthName: string) => {
+export const oAUthToDbUser = async (oAuthEmail: string, oAuthName: string) => {
   await connect();
   const user = await User.findOne({ email: oAuthEmail });
 
   if (user) {
     await disconnect();
     const { _id, name, email, role } = user;
-
     return { _id, name, email, role };
   }
 
@@ -41,11 +40,10 @@ export const oAuthToDbUser = async (oAuthEmail: string, oAuthName: string) => {
     password: "@",
     role: "client",
   });
-
   await newUser.save();
   await disconnect();
-  const { _id, name, email, role } = newUser;
 
+  const { _id, name, email, role } = newUser;
   return { _id, name, email, role };
 };
 
