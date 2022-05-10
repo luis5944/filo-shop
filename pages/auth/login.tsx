@@ -29,7 +29,11 @@ const LoginPage = () => {
   const [providers, setProviders] = useState<any>({});
 
   useEffect(() => {
-    getProviders().then((prov) => setProviders(prov));
+    getProviders()
+      .then((prov) => setProviders(prov))
+      .catch((err) => {
+        console.log("error aqui");
+      });
   }, []);
 
   const {
@@ -164,7 +168,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   query,
 }) => {
   const session = await getSession({ req });
-
+  console.log(session);
   const { p = "/" } = query;
   if (session) {
     return {
